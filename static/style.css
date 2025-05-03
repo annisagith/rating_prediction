@@ -1,7 +1,3 @@
-* {
-  font-family: "Poppins", sans-serif;
-}
-
 .login {
   height: 100vh;
 }
@@ -94,17 +90,80 @@
   font-weight: 600;
 }
 
-/* TOPBAR */
-/* Atur tinggi logo agar pas */
+/* NAVBAR */
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+/* Atur tinggi logo lebih fleksibel */
 .navbar-brand img {
-  height: 30px;
+  max-height: 40px;
   width: auto;
 }
 
-* {
-  outline: 1px solid red;
+.nav-link.active {
+  text-decoration: underline;
 }
 
-body {
-  overflow-x: hidden;
+.button-user {
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+  color: #000000; /* Bisa diganti dengan warna yang lebih kontras */
+  font-size: 24px;
+  font-weight: 700; /* Perbaikan typo dari font-weigth ke font-weight */
+  border-radius: 50%; /* Membuat tombol bulat */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer; /* Menambahkan cursor pointer agar terlihat bisa diklik */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Transisi untuk efek hover */
+  border: none;
+}
+
+.button-user:hover {
+  background-color: #f0f0f0; /* Ganti warna latar belakang saat di-hover */
+  color: #a67d79; /* Ganti warna teks/ikon saat di-hover */
+}
+
+.button-search {
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+  color: #000000; /* Bisa diganti dengan warna yang lebih kontras */
+  font-size: 24px;
+  font-weight: 700; /* Perbaikan typo dari font-weigth ke font-weight */
+  border-radius: 50%; /* Membuat tombol bulat */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer; /* Menambahkan cursor pointer agar terlihat bisa diklik */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Transisi untuk efek hover */
+  border: none;
+}
+
+.button-search:hover {
+  background-color: #f0f0f0; /* Ganti warna latar belakang saat di-hover */
+  color: #a67d79; /* Ganti warna teks/ikon saat di-hover */
+}
+
+/* Styling untuk form input search */
+.search-input {
+  padding: 5px 10px;
+  font-size: 14px;
+  border: none; /* Tidak ada border */
+  border-bottom: 1px solid #ccc; /* Garis bawah tipis */
+  background-color: transparent;
+  width: 200px; /* Ukuran input */
+  outline: none;
+  transition: border-bottom-color 0.3s ease; /* Efek transisi pada border-bottom */
+}
+
+.search-input:focus {
+  border-bottom-color: #a67d79; /* Ubah warna garis bawah saat fokus */
+}
+
+/* FOOTER */
+.judul-footer {
+  color: #a67d79 !important;
 }
