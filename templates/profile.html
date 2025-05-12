@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}AcneRate | Profile{% endblock %}
+
+{% block content %}
+<section>
+    <div class="container py-5">
+        <div class="profile-container">
+            <!-- My Profile Section -->
+            <div class="container-profile d-flex align-items-center p-4">
+                <img src="{{ url_for('static', filename='/img/profile.svg/') }}" alt="icon profile">
+                <div class="profile">
+                    <h5 class="mb-1">{{ account['nama_lengkap'] }}</h5>
+                    <p>{{ account['username'] }}</p>
+                    <p class="text-muted">Bergabung sejak {{ account['created_at'].strftime('%d %B %Y') }}</p>
+                </div>
+            </div>
+
+            <!-- Personal Information Section -->
+            <div class="container-personal align-items-center p-4">
+                <div>
+                    <div class="title d-flex gap-2 align-items-center">
+                        <h5 class="mb-0">Personal Information</h5>
+                        <i id="personal-edit-btn" class="lni lni-pencil fs-5" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="top" title="Klik untuk edit data"></i>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    <strong>{{ message }}</strong>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <form action="{{ url_for('profile') }}" method="post">
+                    <div class="row justify-content-center h-100 px-5">
+                        <!-- Kolom Kiri -->
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="nama_lengkap" class="form-label">Nama Lengkap</label>
+                                <p id="nama_lengkap_display" class="text-muted px-2">{{ account['nama_lengkap'] if account['nama_lengkap'] else 'Data tidak tersedia'}}</p>
+                                <input type="text" class="form-control text-muted d-none" id="nama_lengkap" name="nama_lengkap" value="{{ account['nama_lengkap'] }}" placeholder="Masukkan Nama Lengkap" required />
+                            </div>
+                            <div class="mb-4">
+                                <label for="email" class="form-label">Email</label>
+                                <p id="email_display" class="text-muted px-2">{{ account['email'] }}</p>
+                                <input type="email" class="form-control text-muted d-none" id="email" name="email" value="{{ account['email'] }}" placeholder="Masukkan Email" autocomplete="off" required />
+                            </div>
+                            <div class="mb-4">
+                                <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
+                                <p id="jenis_kelamin_display" class="text-muted px-2">{{ account['gender'] if account['gender'] else 'Data tidak tersedia' }}</p>
+                                <select class="form-control text-muted d-none" name="jenis_kelamin" id="jenis_kelamin" required>
+                                    <option value="">...Pilih...</option>
+                                    <option value="Laki-laki" {% if account['gender'] == 'Laki-laki' %}selected{% endif %}>Laki-laki</option>
+                                    <option value="Perempuan" {% if account['gender'] == 'Perempuan' %}selected{% endif %}>Perempuan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan -->
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="tgl_lahir" class="form-label">Tanggal Lahir</label>
+                                <p id="tgl_lahir_display" class="text-muted px-2">{{ account['tgl_lahir'] if account['tgl_lahir'] else 'Data tidak tersedia' }}</p>
+                                <input type="date" class="form-control text-muted d-none" id="tgl_lahir" name="tgl_lahir" value="{{ account['tgl_lahir'].strftime('%Y-%m-%d') if account['tgl_lahir'] else '' }}" autocomplete="off" required />
+                            </div>
+                            <div class="mb-4">
+                                <label for="tgl_bergabung" class="form-label">Tanggal Bergabung</label>
+                                <p id="tgl_bergabung_display" class="text-muted px-2">{{ account['created_at'].strftime('%d %B %Y') }}</p>
+                            </div>
+                            <div class="registration-form">
+                                <button type="submit" class="signin d-none" id="save-btn" name="form_type" value="personal_info">Simpan</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Account Information Section -->
+            <div class="container-account align-items-center p-4">
+                <div class="title d-flex gap-2 align-items-center">
+                    <h5 class="mb-0">Account Information</h5>
+                    <i id="account-edit-btn" class="lni lni-pencil fs-5" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="top" title="Klik untuk edit data"></i>
+                </div>
+
+                <form action="{{ url_for('profile') }}" method="post">
+                    <div class="row justify-content-center h-100 px-5">
+                        <!-- Kolom Kiri -->
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Password Baru</label>
+                                <p id="password_display" class="text-muted px-2">******</p>
+                                <input type="password" class="form-control text-muted d-none" id="password" name="password" placeholder="Masukkan Password Baru" autocomplete="off" />
+                            </div>
+                            <div class="mb-4 d-none" id="old_password_group">
+                                <label for="old_password" class="form-label">Password Lama</label>
+                                <input type="password" class="form-control text-muted" id="old_password" name="old_password" placeholder="Masukkan password sebelumnya" autocomplete="off" required />
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan -->
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="username" class="form-label">Username</label>
+                                <p id="username_display" class="text-muted px-2">{{ account['username'] if account['username'] else 'Data tidak tersedia'}}</p>
+                                <input type="text" class="form-control text-muted d-none" id="username" name="username" value="{{ account['username'] }}" placeholder="Masukkan Username" required />
+                            </div>
+                            <div class="mb-4">
+                                <div class="registration-form">
+                                    <button type="submit" class="signin d-none" id="account-save-btn" name="form_type" value="account_info">Simpan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

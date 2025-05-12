@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}AcneRate | Beranda{% endblock %}
+
+{% block content %}
+<div class="container-detail">
+<!-- Data Produk -->
+<section class="detail-produk-sec">
+    <div>
+        <img src="{{ url_for('static', filename=produk['path_foto_produk']) }}" alt="{{ produk['nama_produk'] }}">
+    </div>
+    <div>
+        <h5>{{ produk['nama_brand'] }}</h5>
+        <p>{{ produk['nama_produk'] }}</p>
+        <p class="text-muted">{{ produk['harga'] }}</p>
+        <p>{{ produk['deskripsi'] }}</p>
+    </div>
+</section>
+<!-- Review Csutomer -->
+ <section class="customer-review-sec">
+    <div class="title-review d-flex align-items-center">
+        <img
+            src="{{ url_for('static', filename='/img/logo_acnerate_2.png') }}"
+            alt="logo_acnerate"
+          />
+        <h5>Ulasan Pengguna</h5>
+    </div>
+    <div class="aksi-review">
+        <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalTambahReview" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan Ulasan">
+            <i class="lni lni-pencil-alt"></i> Beri Ulasan
+        </button>
+        <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalRating" data-bs-toggle="tooltip" data-bs-placement="top" title="Konfirmasi Rating">
+            <i class="lni lni-pencil-alt"></i> Konfirmasi Rating
+        </button>
+        <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalTambahRating" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan Rating">
+            <i class="lni lni-pencil-alt"></i> Tambah Rating
+        </button>
+    </div>
+    <!-- Modal Beri Ulasan -->
+    <div id="modalTambahReview" class="modal fade" role="dialog" tabindex="-1" aria-labelledby="modalTambahReview" aria-hidden="true">
+        <form action="{{ url_for('beri_ulasan')}}" method="post" enctype="multipart/form-data">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header d-block">
+                        <h5>Beri Ulasan</h5>
+                        <p>Ceritakan pengalamanmu selama penggunaan produk ini!</p>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <textarea class="form-control" id="ulasan" name="ulasan" rows="4" placeholder="Tuliskan ulasan anda disini!!!" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="button-simpan btn" type="submit" data-bs-dismiss="modal">Simpan</button>
+                    </div>
+                </div>
+            </div>
+        </form> 
+    </div>
+
+    <!-- Modal Konfirmasi Rating -->
+    <div id="modalRating" class="modal fade" tabindex="-1" aria-labelledby="modalRatingLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <form action="{{ url_for('beri_ulasan') }}" method="post" enctype="multipart/form-data">
+            <div class="modal-header">
+            <h5 class="modal-title" id="modalRatingLabel" style="font-weight: bold;">Konfirmasi Rating</h5>
+            </div>
+            <div class="modal-body">
+            <h5>4</h5>
+            <p>
+                Kami men-generate ulasan anda ke dalam poin rating menggunakan metode deep learning.
+                Apakah rating yang dihasilkan sesuai dengan opini anda?
+            </p>
+            </div>
+            <div class="modal-footer">
+            <button class="btn btn-primary" name="konfirmasi" value="ya" type="submit">Ya</button>
+            <button class="btn btn-secondary" name="konfirmasi" value="tidak" type="submit" data-bs-dismiss="modal">Tidak</button>  
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+
+ </section>
+</div>
+{% endblock %}

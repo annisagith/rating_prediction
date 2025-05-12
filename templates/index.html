@@ -1,10 +1,72 @@
-{% extends 'base.html' %}
-
-{% block title %}Beranda{% endblock %}
-
-{% block content %}
-  <div class="container mt-5">
-    <h1>Selamat Datang di AcneRate!</h1>
-    <p>Konten halaman beranda di sini...</p>
+{% extends 'base.html' %} {% block title %}AcneRate | Beranda{% endblock %} {% block content %}
+<section class="jumbotron custom-bg">
+  <div class="row justify-content-end mx-3">
+    <div class="col-sm-5">
+      <div class="card p-2">
+        <div class="card-body">
+          <p>Review. Rating. Rekomendasi.</p>
+          <h1 class="card-title">Coba AcneRate Sekarang</h1>
+          <p class="card-text">Temukan Acne Skincare Terbaik dengan Penilaian Rating Otomatis!</p>
+          <a href="#" class="btn btn-card-custom">Coba Sekarang</a>
+        </div>
+      </div>
+    </div>
   </div>
+</section>
+<section id="jenis" class="jenis">
+  <h2>Jenis produk perawatan jerawat</h2>
+  <p>Tinjau berbagai jenis produk perawatan acne treatment skincare</p>   
+  <div class="jenis-scroll">
+    {% for j in jenis %}
+    <div class="jenis-card text-center">
+      <img src="{{ url_for('static', filename=j.path_foto_jenis) }}" alt="..." />
+      <h5 class="jenis-card-title">{{ j.nama_jenis }}</h5>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<section id="brand" class="brand">
+  <h2>Jelajahi merek skincare</h2>
+  <p>Tinjau berbagai merek acne skincare terbaik dengan penilaian rating otomatis!</p>
+  <div class="row d-flex">
+    {% for b in brand %}
+    <div class="brand-card">
+      <img src="{{ url_for('static', filename=b.path_foto_brand) }}" alt="..." />
+      <h5 class="brand-card-title">{{ b.nama_brand }}</h5>
+    </div>
+    {% endfor %}
+  </div>
+  {% if brand|length <= 3 %}
+  <div class="text-center mt-3">
+    <a href="{{ url_for('index', show_all_brand='true') }}#brand" class="btn-brand-custom">Selengkapnya</a>
+  </div>
+  {% endif %}
+</section>
+<section id="produk" class="produk">
+  <h2>Pilih Produk Perawatan Jerawat</h2>
+  <div class="row d-flex">
+    {% for p in produk %}
+    <a href="{{ url_for('detail_produk', id_produk=p.id_produk) }}" class="produk-card-link text-decoration-none text-dark">
+    <div class="produk-card">
+      <img src="{{ url_for('static', filename=p.path_foto_produk) }}" alt="p['nama_produk']" />
+      <div class="caption">
+        <div class="title">
+          <h5>{{ p.nama_brand }}</h5>
+          <p>{{ p.nama_produk }}</p> <!-- Menampilkan nama brand jika ada -->
+        </div>
+        <div class="sub-title d-flex">
+          <div class="card-rating"><h5>{{ p.rating_total }}</h5></div>
+          <div class="card-review"><p>({{ p.jumlah_ulasan }})</p></div>
+        </div>
+      </div>
+    </div>
+    </a> 
+    {% endfor %}
+  </div>
+  {% if produk|length <= 8 %}
+  <div class="text-center mt-3">
+    <a href="{{ url_for('produk') }}#brand" class="btn-brand-custom">Selengkapnya</a>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}

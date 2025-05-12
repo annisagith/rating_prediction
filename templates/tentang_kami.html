@@ -1,0 +1,54 @@
+{% extends 'base.html' %} {% block title %}AcneRate | Tentang Kami{% endblock %} {% block content %}
+<section>
+  <section class="jumbotron custom-bg">
+    <div class="row justify-content-end mx-3">
+      <div class="col-12 col-md-5">
+        <div class="card p-2">
+          <div class="card-body">
+            <p>Review. Rating. Rekomendasi.</p>
+            <h1 class="card-title">AcneRate</h1>
+            <p class="card-text">
+              Pemanfaatan teknologi deep learning dalam mengembangkan model yang mampu memprediksi rating secara otomatis berdasarkan ulasan teks yang diberikan oleh pengguna, sehingga menghasilkan penilaian yang lebih objektif dan dapat
+              dipercaya.
+            </p>
+            <a href="#" class="btn btn-card-custom">Coba Sekarang</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="tentang_kami_1" class="tentang_kami_1">
+    <h2>Tujuan dan Manfaat Sistem</h2>
+    <p>"Menyediakan penilaian yang lebih akurat dengan konsistensi dalam setiap rating."</p>
+    <div class="row d-flex">
+      <div class="gambar">
+        <img src="{{ url_for('static', filename='img/tentang_kami1.svg') }}" alt="" />
+      </div>
+      <div class="content">
+        <p>
+        <strong style="font-weight: bold;">Terhadap pengguna: </strong>
+        Menghasilkan penilaian produk yang akurat dan konsisten yang dapat membantu pengguna dalam menemukan produk pilihan dengan penilaian terbaik.
+        </p>
+        <p>
+        <strong style="font-weight: bold;">Terhadap Kualitas Produk: </strong>
+        Penilaian produk berupa rating yang akurat dapat dijadikan sebagai bahan pertimbangan bagi brand untuk peningkatan kualitas produk
+        </p>
+      </div>
+    </div>
+  </section>
+  <section id="tentang_kami_2" class="tentang_kami_2">
+    <h2>Manual vs Deep Learning</h2>
+    <p class="mb-5">Perbedaan Rating Manual dan Otomatis</p>
+    <div class="row d-flex">
+      <div class="content col-md-6">
+        <h3>Rating Otomatis</h3>
+        <p>Rating otomastis merupakan hasil penerapan model deep learning menggunakan algoritma LSTM dalam mengkonversi data ulasan berupa text ke dalam nilai rating dalam skala 1-5. Fitur ini memberikan jaminan konsistensi penilaian mengikuti pola dataset sehingga dapat meminimalisir inkonsistensi penilaian rating dan ulasan text. </p>
+      </div>
+      <div class="content col-md-5">
+        <h3>Rating Manual</h3>
+        <p>Rating manual memungkinkan user memberikan rating dengan inputan langsung seperti yang  biasa diterapkan pada banyak platform ulasan saat ini. Sistem AcneRate mewadahi pengguna untuk memberikan rating secara manual jika rating yang dihasilkan oleh sistem tidak sesuai dengan opini pengguna dan menjadikan ini bahan evaluasi model kedepannya.</p>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}

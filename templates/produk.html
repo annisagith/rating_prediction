@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}AcneRate | Produk{% endblock %}
+
+{% block content %}
+  <section class="jumbotron-produk custom-bg d-flex align-items-center" style="min-height: 50vh;">
+    <div class="container d-flex justify-content-center">
+      <div class="card custom-card text-center">
+        <div class="card-body">
+          <h1 class="card-title px-5">Temukan Produk Pilihanmu!</h1>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="produk" class="produk">
+    <h2>Pilih Produk Perawatan Jerawat</h2>
+    {% if produk %}
+    <div class="row d-flex">
+    {% for p in produk %}
+    <a href="{{ url_for('detail_produk', id_produk=p.id_produk) }}" class="produk-card-link text-decoration-none text-dark">
+      <div class="produk-card">
+        <img src="{{ url_for('static', filename=p['path_foto_produk']) }}" alt="{{ p['nama_produk'] }}">
+        <div class="caption">
+          <div class="title">
+            <h5>{{ p.nama_brand }}</h5>
+            <p>{{ p.nama_produk }}</p>
+          </div>
+          <div class="sub-title d-flex">
+            <div class="card-rating"><h5>{{ p.rating_total }}</h5></div>
+            <div class="card-review"><p>({{ p.jumlah_ulasan }})</p></div>
+          </div>
+        </div>
+      </div>
+      </a>
+    {% endfor %}
+    </div>
+
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page > 1 %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('produk', page=page-1) }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('produk', page=p) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('produk', page=page+1) }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>  
+
+    {% else %}
+    <div class="text-center py-5">
+        <h4 class="text-muted">Produk Belum Tersedia</h4>
+    </div>
+    {% endif %}
+  </section>
+{% endblock %}
