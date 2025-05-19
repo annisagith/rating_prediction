@@ -24,6 +24,11 @@
 
     <!-- Icon -->
     <link rel="stylesheet" href="https://cdn.lineicons.com/4.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
     <title>{% block title %}AcneRate{% endblock %}</title>
     <style>
@@ -36,7 +41,7 @@
     <!-- Start Navbar -->
     <nav class="navbar navbar-expand-lg bg-white shadow-sm">
       <div class="container">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="{{ url_for('index') }}">
           <img src="{{ url_for('static', filename='/img/logo_acnerate_2.png') }}" alt="logo_acnerate" />
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,18 +53,21 @@
               <a class="nav-link {% if current_path == url_for('index') %}active{% endif %}" aria-current="page" href="{{ url_for('index') }}">Beranda</a>
             </li>
             <li class="nav-item mx-2">
-              <a class="nav-link {% if current_path == url_for('produk') %}active{% endif %}" href="{{ url_for('produk') }}">Produk</a>
+            <a
+              href="{{ url_for('produk') }}"
+              class="nav-link {% if '/produk' in request.path %}active{% endif %}"
+            >Produk
+            </a>
             </li>
             <li class="nav-item mx-2">
               <a class="nav-link {% if current_path == url_for('tentang_kami') %}active{% endif %}" href="{{ url_for('tentang_kami') }}">Tentang Kami</a>
             </li>           
           </ul>
           <div class="d-flex">
-            <form class="d-flex" role="search">
+            <form class="d-flex" role="search" method="GET" action="{{ url_for('produk') }}">
               <input class="me-2 search-input" type="search" placeholder="Cari..." aria-label="Search" name="search" required style="display: none" />
               <button class="button-search" type="submit" id="searchButton">
                 <i class="lni lni-search-alt"></i>
-                <!-- ikon user -->
               </button>
             </form>
             <div class="dropdown">
@@ -96,13 +104,13 @@
           <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
             <h5 class="text-uppercase mb-4 font-weight-bold judul-footer">Navigasi Cepat</h5>
             <p>
-              <a href="#" class="text-dark" style="text-decoration: none">Beranda</a>
+              <a href="{{ url_for('index') }}" class="text-dark" style="text-decoration: none">Beranda</a>
             </p>
             <p>
-              <a href="#" class="text-dark" style="text-decoration: none">Produk</a>
+              <a href="{{ url_for('produk') }}" class="text-dark" style="text-decoration: none">Produk</a>
             </p>
             <p>
-              <a href="#" class="text-dark" style="text-decoration: none">Tentang Kami</a>
+              <a href="{{ url_for('tentang_kami') }}" class="text-dark" style="text-decoration: none">Tentang Kami</a>
             </p>
           </div>
           <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mt-3">
@@ -119,15 +127,15 @@
           </div>
           <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
             <h5 class="text-uppercase mb-4 font-weight-bold judul-footer">Sosial Media</h5>
-            <p>
+            <p class="d-flex align-items-center gap-2">
               <i class="lni lni-envelope"></i>
               annisamarfadilla@gmail.com
             </p>
-            <p>
+            <p class="d-flex align-items-center gap-2">
               <i class="lni lni-whatsapp"></i>
               0895618293078
             </p>
-            <p>
+            <p class="d-flex align-items-center gap-2">
               <i class="lni lni-instagram-original"></i>
               @nns_mrfdll81194
             </p>
@@ -147,19 +155,19 @@
             <div class="text-center text-md-right">
               <ul class="list-unstyled list-inline">
                 <li class="list-inline-item">
-                  <a href="" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-envelope"></i></a>
+                  <a href="mailto:annisamarfadilla@gmail.com" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-envelope"></i></a>
                 </li>
                 <li class="list-inline-item">
-                  <a href="" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-whatsapp"></i></a>
+                  <a href="https://wa.me/62895618192078" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-whatsapp"></i></a>
                 </li>
                 <li class="list-inline-item">
-                  <a href="" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-instagram-original"></i></a>
+                  <a href="https://www.instagram.com/nns_mrfdll81194" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-instagram-original"></i></a>
                 </li>
                 <li class="list-inline-item">
-                  <a href="" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-facebook-original"></i></a>
+                  <a href="https://www.facebook.com" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-facebook-original"></i></a>
                 </li>
                 <li class="list-inline-item">
-                  <a href="" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-twitter"></i></a>
+                  <a href="https://twitter.com" class="btn-floating btn-sm text-dark" style="font-size: 23px"><i class="lni lni-twitter"></i></a>
                 </li>
               </ul>
             </div>

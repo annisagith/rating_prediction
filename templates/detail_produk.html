@@ -4,84 +4,288 @@
 
 {% block content %}
 <div class="container-detail">
-<!-- Data Produk -->
-<section class="detail-produk-sec">
-    <div>
-        <img src="{{ url_for('static', filename=produk['path_foto_produk']) }}" alt="{{ produk['nama_produk'] }}">
-    </div>
-    <div>
-        <h5>{{ produk['nama_brand'] }}</h5>
-        <p>{{ produk['nama_produk'] }}</p>
-        <p class="text-muted">{{ produk['harga'] }}</p>
-        <p>{{ produk['deskripsi'] }}</p>
-    </div>
-</section>
-<!-- Review Csutomer -->
- <section class="customer-review-sec">
-    <div class="title-review d-flex align-items-center">
-        <img
-            src="{{ url_for('static', filename='/img/logo_acnerate_2.png') }}"
-            alt="logo_acnerate"
-          />
-        <h5>Ulasan Pengguna</h5>
-    </div>
-    <div class="aksi-review">
-        <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalTambahReview" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan Ulasan">
-            <i class="lni lni-pencil-alt"></i> Beri Ulasan
-        </button>
-        <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalRating" data-bs-toggle="tooltip" data-bs-placement="top" title="Konfirmasi Rating">
-            <i class="lni lni-pencil-alt"></i> Konfirmasi Rating
-        </button>
-        <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalTambahRating" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan Rating">
-            <i class="lni lni-pencil-alt"></i> Tambah Rating
-        </button>
-    </div>
-    <!-- Modal Beri Ulasan -->
-    <div id="modalTambahReview" class="modal fade" role="dialog" tabindex="-1" aria-labelledby="modalTambahReview" aria-hidden="true">
-        <form action="{{ url_for('beri_ulasan')}}" method="post" enctype="multipart/form-data">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header d-block">
-                        <h5>Beri Ulasan</h5>
-                        <p>Ceritakan pengalamanmu selama penggunaan produk ini!</p>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <textarea class="form-control" id="ulasan" name="ulasan" rows="4" placeholder="Tuliskan ulasan anda disini!!!" required></textarea>
+    <!-- Data Produk -->
+    <section class="detail-produk-sec">
+        <div>
+            {% if produk %}
+                <img src="{{ url_for('static', filename=produk['path_foto_produk']) }}" alt="{{ produk['nama_produk'] }}">
+            {% else %}
+                <p>Produk tidak ditemukan</p>
+            {% endif %}
+        </div>
+        <div>
+            <h5>{{ produk['nama_brand'] }}</h5>
+            <p>{{ produk['nama_produk'] }}</p>
+            <p class="text-muted">Rp {{ produk['harga'] }}</p>
+            <div class="info-rating d-flex">
+                <div class="rerata-rating col-3">
+                    <h1 class="text-muted">{{ produk['rata_rata_rating'] }}</h1>
+                    <div class="icon-rating text-warning">
+                        {% set full_stars = produk['rata_rata_rating'] | int %}
+                        {% set half_star = 1 if produk['rata_rata_rating'] - full_stars >= 0.5 else 0 %}
+                        {% set empty_stars = 5 - full_stars - half_star %}
+
+                        {# Bintang penuh #}
+                        {% for i in range(full_stars) %}
+                            <i class="fas fa-star"></i>
+                        {% endfor %}
+
+                        {# Setengah bintang #}
+                        {% if half_star %}
+                            <i class="fas fa-star-half-alt"></i>
+                        {% endif %}
+
+                        {# Bintang kosong #}
+                        {% for i in range(empty_stars) %}
+                            <i class="far fa-star"></i>
+                        {% endfor %}
+                        </div>
+                        <p class="jmlh-ulasan mt-2 text-muted">
+                            dari total <strong>{{ produk['total_ulasan']  }}</strong> ulasan
+                        </p>
+                </div>
+                <div class="distribusi-rating col-7">
+                     <canvas id="ratingChart"></canvas>
+                </div>
+            </div>
+            <p>{{ produk['deskripsi'] }}</p>
+        </div>
+    </section>
+
+    <!-- Review Customer -->
+    <section class="customer-review-sec">
+        {% with messages = get_flashed_messages(with_categories=true) %} 
+        {% if messages %} 
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        <strong>{{ message }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %} 
+        {% endif %} 
+        {% endwith %} 
+        <div class="title-review d-flex align-items-center">
+            <img
+                src="{{ url_for('static', filename='/img/logo_acnerate_2.png') }}"
+                alt="logo_acnerate"
+            />
+            <h5>Ulasan Pengguna</h5>
+        </div>
+        <div class="aksi-review d-flex">
+            <form method="get" action="{{ url_for('detail_produk', id_produk=produk.id_produk) }}" class="filter-ulasan d-flex">
+                <select name="sort" id="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="" {% if not request.args.get('sort') %}selected{% endif %}>Filter ulasan:</option>
+                    <option value="terbaru" {% if request.args.get('sort') == 'terbaru' %}selected{% endif %}>Rating Terbaru</option>
+                    <option value="terlama" {% if request.args.get('sort') == 'terlama' %}selected{% endif %}>Rating Terlama</option>
+                    <option value="tertinggi" {% if request.args.get('sort') == 'tertinggi' %}selected{% endif %}>Nilai Tertinggi</option>
+                    <option value="terendah" {% if request.args.get('sort') == 'terendah' %}selected{% endif %}>Nilai Terendah</option>
+                    <option value="manual" {% if request.args.get('sort') == 'manual' %}selected{% endif %}>Jenis Rating Manual</option>
+                    <option value="model" {% if request.args.get('sort') == 'model' %}selected{% endif %}>Jenis Rating Model</option>
+                </select>
+            </form>
+            <button type="button" class="tambah-review" data-bs-toggle="modal" data-bs-target="#modalTambahReview" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan Ulasan">
+                <i class="lni lni-pencil-alt"></i> Beri Ulasan
+            </button>
+        </div>
+
+        <!-- Modal Beri Ulasan -->
+        <div id="modalTambahReview" class="modal fade" tabindex="-1" aria-labelledby="modalTambahReview" aria-hidden="true">
+            <form  id="formUlasan" action="{{ url_for('beri_ulasan', id_produk=produk.id_produk) }}" method="post">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header d-block">
+                            <h5>Beri Ulasan</h5>
+                            <p>Ceritakan pengalamanmu selama penggunaan produk ini!</p>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="ulasan" name="ulasan" rows="4" placeholder="Tuliskan ulasan anda disini!!!" required></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small id="charCount" class="text-muted">0/200 karakter</small>
+                                <small id="warningMessage" class="text-danger" style="display: inline;">Ulasan minimal harus 200 karakter!</small>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button class="button-simpan btn" type="submit" id="btnPrediksiRating" style="display: none;">Simpan</button>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button class="button-simpan btn" type="submit" data-bs-dismiss="modal">Simpan</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Konfirmasi Rating -->
+        <div id="modalRating" class="modal fade" tabindex="-1" aria-labelledby="modalRatingLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('konfirmasi_rating') }}" method="post">
+                        <!-- GANTI SESUAI -->
+                        <input type="hidden" name="id_produk" value="{{ produk.id_produk }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Konfirmasi Rating</h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="d-flex align-items-center gap-2 p-1 mb-2" style="background-color: #F7F8FA; ">
+                                <div class="m-2" style="font-size: 24px; color: gold;">
+                                    {% if predicted_rating is not none %}
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= predicted_rating|int %}
+                                                <i class="fas fa-star text-warning"></i>  <!-- Bintang penuh -->
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>  <!-- Bintang kosong -->
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <!-- Jika predicted_rating belum ada, tampilkan default atau tidak tampilkan bintang -->
+                                        <p>Rating belum tersedia.</p>
+                                    {% endif %}
+                                </div>
+                                <h5 class="text-muted m-2">{{ predicted_rating }}/5</h5>
+                            </div>
+                            <p>Kami men-generate ulasan anda ke dalam poin rating menggunakan metode deep learning. Apakah rating yang dihasilkan sesuai dengan opini anda?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button name="konfirmasi" value="ya" type="submit" class="btn button-simpan">Ya</button>
+                            <button name="konfirmasi" value="tidak" class="btn" type="submit">Tidak</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalInputManualRating" class="modal fade" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('simpan_manual_rating', id_produk=produk.id_produk) }}" method="post">
+                        <input type="hidden" name="id_produk" value="{{ id_produk }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Masukkan Rating Manual</h5>
+                        </div>
+                        <div class="modal-body">
+                            <input type="number" class="form-control" name="rating_manual" min="1" max="5" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn button-simpan">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- DAFTAR ULASAN PRODUK -->
+        {% if daftar_ulasan %}
+            {% for ulasan in daftar_ulasan %}
+            <div class="daftar-ulasan d-flex mb-4">
+                <div class="info-user text-center col-3">
+                    <div class="gambar">
+                        <img src="{{ url_for('static', filename='img/gambarUser.svg') }}" alt="icon profile">
+                    </div>
+                    <div class="nama-user">
+                        <p>{{ ulasan.nama_lengkap }}</p>
+                        <small class="text-muted">{{ ulasan.created_at.strftime('%d %B %Y') }}</small>
+                    </div>
+                </div>
+                <div class="info-ulasan col-9">
+                    <div class="rating d-flex justify-content-between">
+                        <div class="nilai-rating">
+                            {% for i in range(ulasan.rating_sentimen|int) %}
+                                <i class="fas fa-star text-warning"></i>
+                            {% endfor %}
+                            {% for i in range(5 - ulasan.rating_sentimen|int) %}
+                                <i class="far fa-star text-warning"></i>
+                            {% endfor %}
+                        </div>
+                        <div class="jenis-rating">
+                            <small class="text-muted">{{ ulasan.status_rating|capitalize }}</small>
+                        </div>
+                    </div>
+                    <div class="ulasan mt-2">
+                        <p>{{ ulasan.ulasan_text }}</p>
                     </div>
                 </div>
             </div>
-        </form> 
-    </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">Belum ada ulasan untuk produk ini.</p>
+        {% endif %}
 
-    <!-- Modal Konfirmasi Rating -->
-    <div id="modalRating" class="modal fade" tabindex="-1" aria-labelledby="modalRatingLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-        <form action="{{ url_for('beri_ulasan') }}" method="post" enctype="multipart/form-data">
-            <div class="modal-header">
-            <h5 class="modal-title" id="modalRatingLabel" style="font-weight: bold;">Konfirmasi Rating</h5>
-            </div>
-            <div class="modal-body">
-            <h5>4</h5>
-            <p>
-                Kami men-generate ulasan anda ke dalam poin rating menggunakan metode deep learning.
-                Apakah rating yang dihasilkan sesuai dengan opini anda?
-            </p>
-            </div>
-            <div class="modal-footer">
-            <button class="btn btn-primary" name="konfirmasi" value="ya" type="submit">Ya</button>
-            <button class="btn btn-secondary" name="konfirmasi" value="tidak" type="submit" data-bs-dismiss="modal">Tidak</button>  
-            </div>
-        </form>
-        </div>
-    </div>
-    </div>
-
- </section>
+    </section>
 </div>
+{% if show_modal_konfirmasi %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var modal = new bootstrap.Modal(document.getElementById('modalRating'));
+        modal.show();
+    });
+</script>
+{% endif %}
+{% if show_manual_input %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var modal = new bootstrap.Modal(document.getElementById('modalInputManualRating'));
+        modal.show();
+    });
+</script>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ulasan = document.getElementById("ulasan");
+    const charCount = document.getElementById("charCount");
+    const warning = document.getElementById("warningMessage");
+    const button_simpan = document.getElementById("btnPrediksiRating");
+
+    // Saat user mengetik di textarea
+    ulasan.addEventListener("input", function () {
+        const panjang = ulasan.value.length;
+        charCount.textContent = `${panjang}/200 karakter`;
+
+        if (panjang >= 200) {
+            warning.style.display = "none";         // Sembunyikan peringatan
+            button_simpan.style.display = "inline"; // Tampilkan tombol
+        } else {
+            warning.style.display = "inline";       // Tampilkan peringatan
+            button_simpan.style.display = "none";   // Sembunyikan tombol
+        }
+    });
+});
+</script>
+
+<!-- grafik distribusi rating -->
+ <script>
+  const ctx = document.getElementById('ratingChart').getContext('2d');
+  const ratingChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['⭐⭐⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐', '⭐⭐', '⭐'],
+      datasets: [{
+        label: 'Jumlah Ulasan',
+        data: [
+          {{ produk['rating_5'] }},
+          {{ produk['rating_4'] }},
+          {{ produk['rating_3'] }},
+          {{ produk['rating_2'] }},
+          {{ produk['rating_1'] }}
+        ],
+        backgroundColor: 'rgba(255, 193, 7, 0.8)', // warna kuning
+        borderColor: 'rgba(255, 193, 7, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y', // untuk horizontal bar chart
+      scales: {
+        x: {
+          beginAtZero: true
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+</script>
+
 {% endblock %}

@@ -1,5 +1,5 @@
 document.getElementById('searchButton').addEventListener('click', function() {
-    var input = document.querySelector('input[name="query"]');
+    var input = document.querySelector('input[name="search"]');
     
     // Toggle input pencarian, tampilkan jika tersembunyi
     if (input.style.display === 'none' || input.style.display === '') {

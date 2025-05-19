@@ -4,6 +4,51 @@ from flask import render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
 from MySQLdb.cursors import DictCursor
+# Kebutuhan Model
+from flask import jsonify
+
+# KODE IMPLEMENTASI MODEL
+import numpy as np
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import pickle
+
+tokenizer_word_index_path = 'model/tokenizer_word_index.pkl'
+tokenizer_config_path = 'model/tokenizer_config.pkl'
+model_path = 'model/model_prediksi_rating.h5'
+
+# Load tokenizer
+with open(tokenizer_word_index_path, 'rb') as f:
+    word_index = pickle.load(f)
+
+with open(tokenizer_config_path, 'rb') as f:
+    config = pickle.load(f)
+
+valid_config = {
+    'num_words': config['num_words'],
+    'filters': config['filters'],
+    'lower': config['lower'],
+    'split': config['split'],
+    'char_level': config['char_level'],
+    'oov_token': config['oov_token']
+}
+
+from tensorflow.keras.preprocessing.text import Tokenizer
+tokenizer = Tokenizer(**valid_config)
+tokenizer.word_index = word_index
+
+
+# Load trained model
+from tensorflow.keras.models import load_model
+model = load_model(model_path)
+
+def preprocess_and_predict_rating(text):
+    sequence = tokenizer.texts_to_sequences([text])
+    padded = pad_sequences(sequence, maxlen=100, padding='post')
+    predictions = model.predict(padded)
+    predicted_rating = np.argmax(predictions, axis=1)[0] + 1
+    return predicted_rating, predictions
+
+
 
 # membuat variabel sebagai instance flask
 app = Flask(__name__)
@@ -39,7 +84,7 @@ def index():
     if show_all_produk:
         cursor.execute("SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand RIGHT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand")
     else:
-        cursor.execute("SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand LEFT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand LIMIT 8")
+        cursor.execute("SELECT p.*, b.nama_brand, COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand LEFT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand LIMIT 8")
     produk = cursor.fetchall()
     
     cursor.close()
@@ -120,9 +165,10 @@ def produk():
         cursor.execute("""
             SELECT COUNT(DISTINCT p.id_produk) as total FROM produk p
             LEFT JOIN brand b ON p.id_brand = b.id_brand
+            LEFT JOIN jenis_produk j ON p.id_jenis = j.id_jenis
             LEFT JOIN ulasan u ON u.id_produk = p.id_produk
-            WHERE p.nama_produk LIKE %s
-        """, ('%' + search_query + '%',))
+            WHERE p.nama_produk LIKE %s OR b.nama_brand LIKE %s OR j.nama_jenis LIKE %s
+        """, ('%' + search_query + '%', '%' + search_query + '%', '%' + search_query + '%',))
     else:
         cursor.execute("SELECT COUNT(*) as total FROM produk")
 
@@ -130,20 +176,22 @@ def produk():
 
     if search_query:
         cursor.execute('''
-            SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan
+            SELECT p.*, b.nama_brand, j.nama_jenis, COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan
             FROM produk p
             LEFT JOIN brand b ON p.id_brand = b.id_brand
             LEFT JOIN ulasan u ON u.id_produk = p.id_produk
-            WHERE p.nama_produk LIKE %s
+            LEFT JOIN jenis_produk j ON j.id_jenis = p.id_jenis
+            WHERE p.nama_produk LIKE %s OR b.nama_brand LIKE %s OR j.nama_jenis LIKE %s
             GROUP BY p.id_produk, b.nama_brand
             LIMIT %s OFFSET %s
-        ''', ('%' + search_query + '%', per_page, offset))
+        ''', ('%' + search_query + '%', '%' + search_query + '%', '%' + search_query + '%', per_page, offset))
     else:
         cursor.execute('''
-            SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan
+            SELECT p.*, b.nama_brand, j.nama_jenis, COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan
             FROM produk p
             LEFT JOIN brand b ON p.id_brand = b.id_brand
             LEFT JOIN ulasan u ON u.id_produk = p.id_produk
+            LEFT JOIN jenis_produk j ON j.id_jenis = p.id_jenis
             GROUP BY p.id_produk, b.nama_brand
             LIMIT %s OFFSET %s
         ''', (per_page, offset))
@@ -166,7 +214,7 @@ def profile():
     if 'loggedin' not in session or 'id_customer' not in session:
         flash('Harap Login Dulu', 'danger')
         return redirect(url_for('login'))
-
+    
     cursor = mysql.connection.cursor()
 
     if request.method == 'POST':
@@ -254,13 +302,138 @@ def detail_produk(id_produk):
     if 'loggedin' not in session or 'id_customer' not in session:
         flash('Harap Login Dulu', 'danger')
         return redirect(url_for('login'))
-
+    
+    predicted_rating = session.get('predicted_rating')
     cursor = mysql.connection.cursor()
+    sort = request.args.get('sort', default='')
 
-    # Query dengan parameter (pastikan koma di tuple)
-    cursor.execute('SELECT * FROM produk WHERE id_produk = %s', (id_produk,))
+    # Ambil data produk (query kamu tetap sama)
     cursor.execute('''
-        SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan
+        SELECT 
+            p.*, 
+            b.nama_brand, 
+            COALESCE(COUNT(u.id_ulasan), 0) AS total_ulasan,
+            COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan,
+            COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating,
+            SUM(CASE WHEN u.rating_sentimen = 1 THEN 1 ELSE 0 END) AS rating_1,
+            SUM(CASE WHEN u.rating_sentimen = 2 THEN 1 ELSE 0 END) AS rating_2,
+            SUM(CASE WHEN u.rating_sentimen = 3 THEN 1 ELSE 0 END) AS rating_3,
+            SUM(CASE WHEN u.rating_sentimen = 4 THEN 1 ELSE 0 END) AS rating_4,
+            SUM(CASE WHEN u.rating_sentimen = 5 THEN 1 ELSE 0 END) AS rating_5
+        FROM produk p
+        LEFT JOIN brand b ON p.id_brand = b.id_brand
+        LEFT JOIN ulasan u ON u.id_produk = p.id_produk
+        WHERE p.id_produk = %s
+        GROUP BY p.id_produk, b.nama_brand
+    ''', (id_produk,))
+    produk = cursor.fetchone()
+
+    if produk is None:
+        flash('Produk tidak ditemukan.', 'warning')
+        return redirect(url_for('produk'))
+
+    # Bangun query ulasan dinamis berdasarkan sort/filter
+    base_query = '''
+        SELECT u.ulasan_text, u.rating_sentimen, u.status_rating, u.created_at, c.nama_lengkap
+        FROM ulasan u
+        JOIN customer c ON u.id_customer = c.id_customer
+        WHERE u.id_produk = %s
+    '''
+    params = [id_produk]
+
+    # Filter jenis rating manual/model
+    if sort == 'manual':
+        base_query += ' AND u.status_rating = %s '
+        params.append('manual')
+    elif sort == 'model':
+        base_query += ' AND u.status_rating = %s '
+        params.append('model')
+
+    # Sorting
+    if sort == 'terbaru':
+        base_query += ' ORDER BY u.created_at DESC '
+    elif sort == 'terlama':
+        base_query += ' ORDER BY u.created_at ASC '
+    elif sort == 'tertinggi':
+        base_query += ' ORDER BY u.rating_sentimen DESC '
+    elif sort == 'terendah':
+        base_query += ' ORDER BY u.rating_sentimen ASC '
+    else:
+        # Default sort, misal terbaru
+        base_query += ' ORDER BY u.created_at DESC '
+
+    cursor.execute(base_query, tuple(params))
+    daftar_ulasan = cursor.fetchall()
+    cursor.close()
+
+    return render_template('detail_produk.html', produk=produk, predicted_rating=predicted_rating, daftar_ulasan=daftar_ulasan)
+
+@app.route('/produk/detail_produk/beri_ulasan/<string:id_produk>', methods=['GET', 'POST'])
+def beri_ulasan(id_produk):  
+    cursor = mysql.connection.cursor()
+    cursor.execute('''
+        SELECT 
+            p.*, 
+            b.nama_brand, 
+            COALESCE(COUNT(u.id_ulasan), 0) AS total_ulasan,
+            COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan,
+            COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating,
+            SUM(CASE WHEN u.rating_sentimen = 1 THEN 1 ELSE 0 END) AS rating_1,
+            SUM(CASE WHEN u.rating_sentimen = 2 THEN 1 ELSE 0 END) AS rating_2,
+            SUM(CASE WHEN u.rating_sentimen = 3 THEN 1 ELSE 0 END) AS rating_3,
+            SUM(CASE WHEN u.rating_sentimen = 4 THEN 1 ELSE 0 END) AS rating_4,
+            SUM(CASE WHEN u.rating_sentimen = 5 THEN 1 ELSE 0 END) AS rating_5
+        FROM produk p
+        LEFT JOIN brand b ON p.id_brand = b.id_brand
+        LEFT JOIN ulasan u ON u.id_produk = p.id_produk
+        WHERE p.id_produk = %s
+        GROUP BY p.id_produk, b.nama_brand
+    ''', (id_produk,))
+    produk = cursor.fetchone()  # Fetch the product details based on the product ID
+    
+    # If product is not found, handle the case appropriately
+    if not produk:
+        flash("Produk tidak ditemukan!")
+        return redirect(url_for('produk'))  # Redirect to another page or handle error
+    
+    if request.method == 'POST' and 'ulasan' in request.form:
+        ulasan = request.form['ulasan']
+        
+        predicted_rating, _ = preprocess_and_predict_rating(ulasan)
+
+        # Simpan ulasan & prediksi ke session sementara
+        session['ulasan'] = ulasan
+        session['predicted_rating'] = int(predicted_rating)
+
+
+        # Tampilkan modal konfirmasi rating
+        return render_template('detail_produk.html', produk=produk, id_produk=id_produk, predicted_rating=predicted_rating, show_modal_konfirmasi=True)
+
+    return render_template('detail_produk.html', produk=produk, id_produk=id_produk, predicted_rating=predicted_rating)
+
+@app.route('/produk/detail_produk/konfirmasi_rating', methods=['POST'])
+def konfirmasi_rating():
+    konfirmasi = request.form.get('konfirmasi')
+    id_produk = request.form.get('id_produk')
+    id_customer = session.get('id_customer')  # ganti sesuai nama session login
+
+    ulasan = session.get('ulasan')
+    predicted_rating = session.get('predicted_rating') 
+    
+    # Ambil data produk dari DB
+    cursor = mysql.connection.cursor()
+    cursor.execute('''
+        SELECT 
+            p.*, 
+            b.nama_brand, 
+            COALESCE(COUNT(u.id_ulasan), 0) AS total_ulasan,
+            COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan,
+            COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating,
+            SUM(CASE WHEN u.rating_sentimen = 1 THEN 1 ELSE 0 END) AS rating_1,
+            SUM(CASE WHEN u.rating_sentimen = 2 THEN 1 ELSE 0 END) AS rating_2,
+            SUM(CASE WHEN u.rating_sentimen = 3 THEN 1 ELSE 0 END) AS rating_3,
+            SUM(CASE WHEN u.rating_sentimen = 4 THEN 1 ELSE 0 END) AS rating_4,
+            SUM(CASE WHEN u.rating_sentimen = 5 THEN 1 ELSE 0 END) AS rating_5
         FROM produk p
         LEFT JOIN brand b ON p.id_brand = b.id_brand
         LEFT JOIN ulasan u ON u.id_produk = p.id_produk
@@ -269,16 +442,43 @@ def detail_produk(id_produk):
     ''', (id_produk,))
     produk = cursor.fetchone()
     cursor.close()
+    
+    if konfirmasi == 'ya':
+        # Simpan ke DB langsung dari hasil prediksi
+        cursor = mysql.connection.cursor()
+        cursor.execute("""
+            INSERT INTO ulasan (id_ulasan, id_produk, id_customer, ulasan_text, rating_sentimen, status_rating, created_at, updated_at)
+            VALUES (UUID(), %s, %s, %s, %s, %s, NOW(), NOW())
+        """, (id_produk, id_customer, ulasan, predicted_rating, 'model'))
+        mysql.connection.commit()
+        cursor.close()
 
-    if produk is None:
-        flash('Produk tidak ditemukan.', 'warning')
-        return redirect(url_for('produk'))  # Atau redirect ke halaman produk
+        flash('Ulasan dan rating berhasil disimpan.', 'success')
+        return redirect(url_for('detail_produk', id_produk=id_produk, produk=produk))
 
-    return render_template('detail_produk.html', produk=produk)
+    elif konfirmasi == 'tidak':
+        return render_template('detail_produk.html', id_produk=id_produk, produk=produk, show_manual_input=True, predicted_rating=predicted_rating)
 
-@app.route('/produk/detail_produk/beri_ulasan')
-def beri_ulasan():
-    return render_template('detail_produk.html')
+@app.route('/produk/detail_produk/simpan_manual_rating/<string:id_produk>', methods=['GET', 'POST'])
+def simpan_manual_rating(id_produk):
+    rating_manual = request.form.get('rating_manual')
+    id_produk = request.form.get('id_produk')
+
+    id_customer = session.get('id_customer')
+
+    ulasan = session.get('ulasan')
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute("""
+        INSERT INTO ulasan (id_ulasan, id_produk, id_customer, ulasan_text, rating_sentimen, status_rating, created_at, updated_at)
+        VALUES (UUID(), %s, %s, %s, %s, %s, NOW(), NOW())
+    """, (id_produk, id_customer, ulasan, rating_manual, 'manual'))
+    mysql.connection.commit()
+    cursor.close()
+
+    flash('Ulasan dan rating manual berhasil disimpan.', 'success')
+    return redirect(url_for('detail_produk', id_produk=id_produk))
+
     
 if __name__ == '__main__':
     app.run(debug=True)

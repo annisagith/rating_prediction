@@ -7,7 +7,7 @@
           <p>Review. Rating. Rekomendasi.</p>
           <h1 class="card-title">Coba AcneRate Sekarang</h1>
           <p class="card-text">Temukan Acne Skincare Terbaik dengan Penilaian Rating Otomatis!</p>
-          <a href="#" class="btn btn-card-custom">Coba Sekarang</a>
+          <a href="{{ url_for('produk') }}" class="btn btn-card-custom">Coba Sekarang</a>
         </div>
       </div>
     </div>
@@ -55,7 +55,7 @@
           <p>{{ p.nama_produk }}</p> <!-- Menampilkan nama brand jika ada -->
         </div>
         <div class="sub-title d-flex">
-          <div class="card-rating"><h5>{{ p.rating_total }}</h5></div>
+          <div class="card-rating"><h5><i class="fas fa-star text-warning fa-sm"></i> {{ p.rata_rata_rating }}</h5></div>
           <div class="card-review"><p>({{ p.jumlah_ulasan }})</p></div>
         </div>
       </div>

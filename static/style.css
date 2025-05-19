@@ -462,7 +462,6 @@ footer {
 /* DETAIL PRODUK */
 .container-detail {
   margin: 50px 150px;
-  background-color: grey;
 }
 
 .container-detail .detail-produk-sec {
@@ -551,4 +550,70 @@ footer {
   padding: 0.4rem 1rem;
   font-size: 0.875rem;
   border-radius: 0.3rem;
+}
+
+/* DAFTAR ULASAN */
+.info-user {
+  border: 1px solid #bcbcbc;
+  padding: 1rem;
+}
+
+.info-user .gambar img {
+  width: 90px;
+  margin-bottom: 1rem;
+}
+
+.info-user .nama-user p {
+  font-weight: bold;
+  margin: 0;
+}
+
+.info-ulasan {
+  border: 1px solid #bcbcbc;
+}
+
+.info-ulasan .rating {
+  border: 1px solid #bcbcbc;
+  padding: 1rem;
+}
+
+.info-ulasan .ulasan {
+  border: 1px solid #bcbcbc;
+  padding: 0.5rem;
+}
+
+.info-ulasan .rating {
+  justify-content: space-between;
+}
+
+.info-rating {
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.info-rating .rerata-rating {
+  border: 2px solid #dadada;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.info-rating .rerata-rating h1 {
+  font-size: 63px;
+}
+
+.icon-rating i {
+  font-size: 24px; /* atau ukuran lain seperti 18px, 30px, dll */
+}
+
+.info-rating .distribusi-rating {
+  border: 2px solid #dadada;
+  padding: 1rem;
+  border-radius: 8px;
+  height: 200px;
+}
+
+#ratingChart {
+  width: 100% !important;
+  height: 100% !important;
 }
