@@ -82,9 +82,9 @@ def index():
     # Ambil produk
     cursor = mysql.connection.cursor()
     if show_all_produk:
-        cursor.execute("SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand RIGHT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand")
+        cursor.execute("SELECT p.*, b.nama_brand, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand RIGHT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand ORDER BY rata_rata_rating DESC, jumlah_ulasan DESC")
     else:
-        cursor.execute("SELECT p.*, b.nama_brand, COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand LEFT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand LIMIT 8")
+        cursor.execute("SELECT p.*, b.nama_brand, COALESCE(ROUND(AVG(u.rating_sentimen), 1), 0) AS rata_rata_rating, COALESCE(COUNT(u.id_ulasan), 0) AS jumlah_ulasan FROM produk p LEFT JOIN brand b ON p.id_brand = b.id_brand LEFT JOIN ulasan u ON u.id_produk = p.id_produk GROUP BY p.id_produk, b.nama_brand ORDER BY rata_rata_rating DESC, jumlah_ulasan DESC LIMIT 8")
     produk = cursor.fetchall()
     
     cursor.close()
@@ -183,6 +183,7 @@ def produk():
             LEFT JOIN jenis_produk j ON j.id_jenis = p.id_jenis
             WHERE p.nama_produk LIKE %s OR b.nama_brand LIKE %s OR j.nama_jenis LIKE %s
             GROUP BY p.id_produk, b.nama_brand
+            ORDER BY rata_rata_rating DESC, jumlah_ulasan DESC
             LIMIT %s OFFSET %s
         ''', ('%' + search_query + '%', '%' + search_query + '%', '%' + search_query + '%', per_page, offset))
     else:
@@ -193,6 +194,7 @@ def produk():
             LEFT JOIN ulasan u ON u.id_produk = p.id_produk
             LEFT JOIN jenis_produk j ON j.id_jenis = p.id_jenis
             GROUP BY p.id_produk, b.nama_brand
+            ORDER BY rata_rata_rating DESC, jumlah_ulasan DESC
             LIMIT %s OFFSET %s
         ''', (per_page, offset))
 
@@ -334,13 +336,12 @@ def detail_produk(id_produk):
 
     # Bangun query ulasan dinamis berdasarkan sort/filter
     base_query = '''
-        SELECT u.ulasan_text, u.rating_sentimen, u.status_rating, u.created_at, c.nama_lengkap
+        SELECT u.ulasan_text, u.rating_sentimen, u.status_rating, u.created_at, c.nama_lengkap, u.id_customer
         FROM ulasan u
         JOIN customer c ON u.id_customer = c.id_customer
         WHERE u.id_produk = %s
     '''
     params = [id_produk]
-
     # Filter jenis rating manual/model
     if sort == 'manual':
         base_query += ' AND u.status_rating = %s '
@@ -479,7 +480,6 @@ def simpan_manual_rating(id_produk):
     flash('Ulasan dan rating manual berhasil disimpan.', 'success')
     return redirect(url_for('detail_produk', id_produk=id_produk))
 
-    
 if __name__ == '__main__':
     app.run(debug=True)
     
