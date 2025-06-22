@@ -18,7 +18,7 @@
             <p>{{ produk['nama_produk'] }}</p>
             <p class="text-muted">Rp {{ produk['harga'] }}</p>
             <div class="info-rating d-flex">
-                <div class="rerata-rating col-3">
+                <div class="rerata-rating">
                     <h1 class="text-muted">{{ produk['rata_rata_rating'] }}</h1>
                     <div class="icon-rating text-warning">
                         {% set full_stars = produk['rata_rata_rating'] | int %}
