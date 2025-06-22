@@ -481,5 +481,6 @@ def simpan_manual_rating(id_produk):
     return redirect(url_for('detail_produk', id_produk=id_produk))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
     
